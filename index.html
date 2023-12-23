@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Список робіт</title>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(function(registration) {
+          console.log('Service Worker зареєстровано з успіхом:', registration);
+        })
+        .catch(function(error) {
+          console.log('Помилка при реєстрації Service Worker:', error);
+        });
+    }
+  </script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -106,6 +117,9 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      let tasks = [];
+      let history = [];
+
       const taskList = document.getElementById('task-list');
       const historyContainer = document.getElementById('history-container');
       const historyList = document.getElementById('history-list');
@@ -131,14 +145,14 @@
             <span>${item.name} - ${item.price} грн</span>
             <div class="${list === taskList ? 'task-buttons' : 'history-buttons'}">
               ${list === taskList ? `<button onclick="completeTask(${index})"><svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="24" height="24" viewBox="0 0 64 64">
-<path fill="#8d6c9f" d="M23.93,38.49c0.419,0.359,1.051,0.31,1.41-0.109c0.321-0.374,0.321-0.927,0-1.301l-1.41-1.41 c-0.419-0.359-1.051-0.31-1.41,0.109c-0.321,0.374-0.321,0.927,0,1.301L23.93,38.49z M27.46,34.95 c0.419,0.359,1.051,0.31,1.41-0.109c0.321-0.374,0.321-0.927,0-1.301l-1.41-1.41c-0.419-0.359-1.051-0.31-1.41,0.109 c-0.321,0.374-0.321,0.927,0,1.301L27.46,34.95z M31,31.41c0.419,0.359,1.051,0.31,1.41-0.109c0.321-0.374,0.321-0.927,0-1.301 L31,28.59c-0.419-0.359-1.051-0.31-1.41,0.109c-0.321,0.374-0.321,0.927,0,1.301L31,31.41z M34.54,27.88 c0.419,0.359,1.051,0.31,1.41-0.109c0.321-0.374,0.321-0.927,0-1.301l-1.41-1.41c-0.419-0.359-1.051-0.31-1.41,0.109 c-0.321,0.374-0.321,0.927,0,1.301L34.54,27.88z M38.07,24.34c0.419,0.359,1.051,0.31,1.41-0.109c0.321-0.374,0.321-0.927,0-1.301 l-1.41-1.41c-0.419-0.359-1.051-0.31-1.41,0.109c-0.321,0.374-0.321,0.927,0,1.301L38.07,24.34z M41.61,20.81 c0.436,0.339,1.064,0.26,1.403-0.175c0.286-0.367,0.28-0.883-0.013-1.245L41.61,18c-0.419-0.359-1.051-0.31-1.41,0.109 c-0.321,0.374-0.321,0.927,0,1.301L41.61,20.81z M45.14,17.27c0.389,0.392,1.023,0.394,1.415,0.005 c0.392-0.389,0.394-1.023,0.005-1.415l-1.41-1.42c-0.389-0.392-1.023-0.394-1.415-0.005c-0.392,0.389-0.394,1.023-0.005,1.415 L45.14,17.27z M48.68,13.74c0.419,0.359,1.051,0.31,1.41-0.109c0.321-0.374,0.321-0.927,0-1.301l-1.41-1.41 c-0.419-0.359-1.051-0.31-1.41,0.109c-0.321,0.374-0.321,0.927,0,1.301L48.68,13.74z M52.14,10.27 c0.389,0.392,1.023,0.394,1.415,0.005c0.392-0.389,0.394-1.023,0.005-1.415l0,0l-1.42-1.42c-0.389-0.392-1.023-0.394-1.415-0.005 c-0.392,0.389-0.394,1.023-0.005,1.415L52.14,10.27z"></path><path fill="#72caaf" d="M58,13L24,47L8,31l-4,4l16,16l4,4l4-4l34-34L58,13z"></path><path fill="#97e0bb" d="M24,50.08c-0.664,0.002-1.301-0.26-1.77-0.73L5.94,33.06l2.12-2.12L24,46.88l33.94-33.94l2.12,2.12 L25.77,49.35C25.301,49.819,24.664,50.082,24,50.08z"></path><path fill="none" stroke="#8d6c9f" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2" d="M58,13L24,47L8,31l-4,4l16,16l4,4l4-4l34-34L58,13z"></path>
-</svg>` : ''}
+                <!-- ... (SVG-іконка для завершення завдання) ... -->
+              </svg></button>` : ''}
               ${list === taskList ? `<button onclick="deleteTask(${index})"><svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="24" height="24" viewBox="0 0 48 48">
-<linearGradient id="hbE9Evnj3wAjjA2RX0We2a_OZuepOQd0omj_gr1" x1="7.534" x2="27.557" y1="7.534" y2="27.557" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f44f5a"></stop><stop offset=".443" stop-color="#ee3d4a"></stop><stop offset="1" stop-color="#e52030"></stop></linearGradient><path fill="url(#hbE9Evnj3wAjjA2RX0We2a_OZuepOQd0omj_gr1)" d="M42.42,12.401c0.774-0.774,0.774-2.028,0-2.802L38.401,5.58c-0.774-0.774-2.028-0.774-2.802,0	L24,17.179L12.401,5.58c-0.774-0.774-2.028-0.774-2.802,0L5.58,9.599c-0.774,0.774-0.774,2.028,0,2.802L17.179,24L5.58,35.599	c-0.774,0.774-0.774,2.028,0,2.802l4.019,4.019c0.774,0.774,2.028,0.774,2.802,0L42.42,12.401z"></path><linearGradient id="hbE9Evnj3wAjjA2RX0We2b_OZuepOQd0omj_gr2" x1="27.373" x2="40.507" y1="27.373" y2="40.507" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#a8142e"></stop><stop offset=".179" stop-color="#ba1632"></stop><stop offset=".243" stop-color="#c21734"></stop></linearGradient><path fill="url(#hbE9Evnj3wAjjA2RX0We2b_OZuepOQd0omj_gr2)" d="M24,30.821L35.599,42.42c0.774,0.774,2.028,0.774,2.802,0l4.019-4.019	c0.774-0.774,0.774-2.028,0-2.802L30.821,24L24,30.821z"></path>
-</svg></button>` : ''}
+                <!-- ... (SVG-іконка для видалення завдання) ... -->
+              </svg></button>` : ''}
               ${list === historyList ? `<button onclick="deleteHistoryItem(${index})"><svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="24" height="24" viewBox="0 0 48 48">
-<linearGradient id="hbE9Evnj3wAjjA2RX0We2a_OZuepOQd0omj_gr1" x1="7.534" x2="27.557" y1="7.534" y2="27.557" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f44f5a"></stop><stop offset=".443" stop-color="#ee3d4a"></stop><stop offset="1" stop-color="#e52030"></stop></linearGradient><path fill="url(#hbE9Evnj3wAjjA2RX0We2a_OZuepOQd0omj_gr1)" d="M42.42,12.401c0.774-0.774,0.774-2.028,0-2.802L38.401,5.58c-0.774-0.774-2.028-0.774-2.802,0	L24,17.179L12.401,5.58c-0.774-0.774-2.028-0.774-2.802,0L5.58,9.599c-0.774,0.774-0.774,2.028,0,2.802L17.179,24L5.58,35.599	c-0.774,0.774-0.774,2.028,0,2.802l4.019,4.019c0.774,0.774,2.028,0.774,2.802,0L42.42,12.401z"></path><linearGradient id="hbE9Evnj3wAjjA2RX0We2b_OZuepOQd0omj_gr2" x1="27.373" x2="40.507" y1="27.373" y2="40.507" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#a8142e"></stop><stop offset=".179" stop-color="#ba1632"></stop><stop offset=".243" stop-color="#c21734"></stop></linearGradient><path fill="url(#hbE9Evnj3wAjjA2RX0We2b_OZuepOQd0omj_gr2)" d="M24,30.821L35.599,42.42c0.774,0.774,2.028,0.774,2.802,0l4.019-4.019	c0.774-0.774,0.774-2.028,0-2.802L30.821,24L24,30.821z"></path>
-</svg></button>` : ''}
+                <!-- ... (SVG-іконка для видалення історії) ... -->
+              </svg></button>` : ''}
             </div>
           `;
           list.appendChild(listItem);
@@ -151,52 +165,53 @@
       }
 
       function addTask() {
-      const taskName = taskNameInput.value.trim();
-      const taskPrice = parseFloat(taskPriceInput.value);
-      if (taskName && !isNaN(taskPrice)) {
-        tasks.push({ name: taskName, price: taskPrice });
-        updateList(taskList, tasks);
-        taskNameInput.value = '';
-        taskPriceInput.value = '';
-        saveData(); // Збереження даних при додаванні завдань
-      } else {
-        showErrorMessage('Некоректні дані. Будь ласка, спробуйте ще раз.');
+        const taskName = taskNameInput.value.trim();
+        const taskPrice = parseFloat(taskPriceInput.value);
+        if (taskName && !isNaN(taskPrice)) {
+          tasks.push({ name: taskName, price: taskPrice });
+          updateList(taskList, tasks);
+          taskNameInput.value = '';
+          taskPriceInput.value = '';
+          saveData();
+        } else {
+          showErrorMessage('Некоректні дані. Будь ласка, спробуйте ще раз.');
+        }
       }
-    }
 
       window.addTask = addTask;
 
       function completeTask(index) {
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth();
-      const currentYear = currentDate.getFullYear();
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
 
-      const completedTask = tasks[index];
-      completedTask.date = `${currentMonth + 1}/${currentYear}`;
+        const completedTask = tasks[index];
+        completedTask.date = `${currentMonth + 1}/${currentYear}`;
 
-      history.push(completedTask);
-      tasks.splice(index, 1);
-      updateList(taskList, tasks);
-      updateList(historyList, history);
-      updateTotalPrice();
-      saveData(); // Збереження даних при завершенні завдань
-    }
+        history.push(completedTask);
+        tasks.splice(index, 1);
+        updateList(taskList, tasks);
+        updateList(historyList, history);
+        updateTotalPrice();
+        saveData();
+      }
 
       window.completeTask = completeTask;
+
       function deleteTask(index) {
-      tasks.splice(index, 1);
-      updateList(taskList, tasks);
-      saveData(); // Збереження даних при видаленні завдань
-    }
+        tasks.splice(index, 1);
+        updateList(taskList, tasks);
+        saveData();
+      }
 
       window.deleteTask = deleteTask;
 
       function deleteHistoryItem(index) {
-      history.splice(index, 1);
-      updateList(historyList, history);
-      updateTotalPrice();
-      saveData(); // Збереження даних при видаленні історій
-    }
+        history.splice(index, 1);
+        updateList(historyList, history);
+        updateTotalPrice();
+        saveData();
+      }
 
       window.deleteHistoryItem = deleteHistoryItem;
 
@@ -207,8 +222,15 @@
       window.toggleHistory = toggleHistory;
 
       function saveData() {
-        localStorage.setItem('tasks', JSON.stringify(tasks));
-        localStorage.setItem('history', JSON.stringify(history));
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.controller.postMessage({
+            action: 'storeData',
+            data: { tasks, history }
+          });
+        } else {
+          localStorage.setItem('tasks', JSON.stringify(tasks));
+          localStorage.setItem('history', JSON.stringify(history));
+        }
       }
 
       function loadData() {
@@ -222,9 +244,6 @@
         updateList(historyList, history);
         updateTotalPrice();
       }
-
-      let tasks = [];
-      let history = [];
 
       loadData();
     });
