@@ -48,79 +48,98 @@
 <ul id="taskList"></ul>
 
 <script>
+    var db;
+
+    // Відкриття або створення бази даних
+    var request = window.indexedDB.open('tasksDB', 1);
+
+    request.onerror = function(event) {
+        console.log('Помилка відкриття бази даних:', event.target.errorCode);
+    };
+
+    request.onsuccess = function(event) {
+        console.log('База даних відкрита успішно');
+        db = event.target.result;
+
+        // Завантаження робіт при завантаженні сторінки
+        loadTasks();
+    };
+
+    request.onupgradeneeded = function(event) {
+        console.log('Оновлення бази даних');
+        var db = event.target.result;
+
+        // Створення об'єктного сховища для робіт
+        var objectStore = db.createObjectStore('tasks', { keyPath: 'id', autoIncrement: true });
+
+        // Додавання індексів для полів
+        objectStore.createIndex('text', 'text', { unique: false });
+        objectStore.createIndex('price', 'price', { unique: false });
+    };
+
     function addTask() {
         var taskInput = document.getElementById('taskInput');
         var priceInput = document.getElementById('priceInput');
-        var taskList = document.getElementById('taskList');
 
         if (taskInput.value.trim() !== '') {
-            var taskItem = document.createElement('li');
-            taskItem.className = 'taskItem';
+            var transaction = db.transaction(['tasks'], 'readwrite');
+            var objectStore = transaction.objectStore('tasks');
 
-            var taskText = document.createElement('span');
-            taskText.textContent = taskInput.value;
+            // Додавання роботи до бази даних
+            var request = objectStore.add({ text: taskInput.value, price: priceInput.value });
 
-            var taskPrice = document.createElement('span');
-            taskPrice.className = 'price';
-            taskPrice.textContent = 'Ціна: ' + priceInput.value;
+            request.onsuccess = function(event) {
+                console.log('Робота додана до бази даних');
+                taskInput.value = '';
+                priceInput.value = '';
 
-            taskItem.appendChild(taskText);
-            taskItem.appendChild(taskPrice);
+                // Оновлення відображення робіт
+                loadTasks();
+            };
 
-            taskList.appendChild(taskItem);
-
-            taskInput.value = '';
-            priceInput.value = '';
-
-            saveTasks();
+            request.onerror = function(event) {
+                console.log('Помилка додавання роботи:', event.target.errorCode);
+            };
         }
-    }
-
-    function saveTasks() {
-        var taskList = document.getElementById('taskList');
-        var tasks = [];
-
-        for (var i = 0; i < taskList.children.length; i++) {
-            var taskItem = taskList.children[i];
-            var taskText = taskItem.querySelector('span');
-            var taskPrice = taskItem.querySelector('.price');
-
-            tasks.push({
-                text: taskText.textContent,
-                price: taskPrice.textContent.replace('Ціна: ', '')
-            });
-        }
-
-        localStorage.setItem('tasks', JSON.stringify(tasks));
     }
 
     function loadTasks() {
         var taskList = document.getElementById('taskList');
-        var tasks = localStorage.getItem('tasks');
 
-        if (tasks) {
-            tasks = JSON.parse(tasks);
+        // Очищення відображення робіт
+        taskList.innerHTML = '';
 
-            for (var i = 0; i < tasks.length; i++) {
+        var transaction = db.transaction(['tasks'], 'readonly');
+        var objectStore = transaction.objectStore('tasks');
+
+        // Відкриття курсора для прочитання всіх робіт
+        var request = objectStore.openCursor();
+
+        request.onsuccess = function(event) {
+            var cursor = event.target.result;
+
+            if (cursor) {
+                // Створення елемента списку для кожної роботи
                 var taskItem = document.createElement('li');
                 taskItem.className = 'taskItem';
 
                 var taskText = document.createElement('span');
-                taskText.textContent = tasks[i].text;
+                taskText.textContent = cursor.value.text;
 
                 var taskPrice = document.createElement('span');
                 taskPrice.className = 'price';
-                taskPrice.textContent = 'Ціна: ' + tasks[i].price;
+                taskPrice.textContent = 'Ціна: ' + cursor.value.price;
 
                 taskItem.appendChild(taskText);
                 taskItem.appendChild(taskPrice);
 
                 taskList.appendChild(taskItem);
-            }
-        }
-    }
 
-    window.onload = loadTasks;
+                // Переход до наступного запису в базі даних
+                cursor.continue();
+            }
+        };
+    }
 </script>
 
 </body>
