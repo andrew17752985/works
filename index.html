@@ -1,135 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Список робіт</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
 
-        #taskInput {
-            width: 200px;
-        }
+    #app {
+      width: 100%;
+      max-width: 800px;
+      margin: 20px auto;
+      background-color: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
 
-        #priceInput {
-            width: 80px;
-        }
+    #task-list,
+    #history-list {
+      list-style: none;
+      padding: 0;
+    }
 
-        #taskList {
-            list-style: none;
-            padding: 0;
-        }
+    .task, .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #ccc;
+      padding: 10px 0;
+    }
 
-        .taskItem {
-            margin-bottom: 10px;
-        }
+    .task-buttons,
+    .history-buttons {
+      display: flex;
+      gap: 5px;
+    }
 
-        .price {
-            margin-left: 10px;
-            color: #555;
-        }
-    </style>
-    <title>Запланована робота</title>
+    #total-price {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    #history-container {
+      display: none;
+      margin-top: 10px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background-color: transparent;
+      color: #4caf50;
+      border: 1px solid #4caf50;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 4px;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      fill: #4caf50;
+    }
+
+    .message {
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: #f44336;
+      color: white;
+      display: none;
+    }
+  </style>
 </head>
 <body>
+  <div id="app">
+    <h1>Список робіт</h1>
 
-<h1>Запланована робота</h1>
+    <div class="message" id="errorMessage"></div>
 
-<label for="taskInput">Запланована робота: </label>
-<input type="text" id="taskInput" placeholder="Введіть роботу">
+    <h2>Заплановані роботи</h2>
+    <input type="text" id="taskName" placeholder="Опис роботи">
+    <input type="number" id="taskPrice" placeholder="Ціна за роботу">
+    <button onclick="addTask()">Додати роботу</button>
+    <ul id="task-list"></ul>
 
-<label for="priceInput">Ціна: </label>
-<input type="number" id="priceInput" placeholder="Введіть ціну">
+    <h2>
+      <button onclick="toggleHistory()">Показати/приховати історію</button>
+    </h2>
+    <div id="history-container">
+      <ul id="history-list"></ul>
+    </div>
 
-<button onclick="addTask()">Додати</button>
+    <div id="total-price">Загальна вартість виконаних робіт: 0 грн</div>
+  </div>
 
-<ul id="taskList"></ul>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const taskList = document.getElementById('task-list');
+      const historyContainer = document.getElementById('history-container');
+      const historyList = document.getElementById('history-list');
+      const totalPriceElement = document.getElementById('total-price');
+      const taskNameInput = document.getElementById('taskName');
+      const taskPriceInput = document.getElementById('taskPrice');
+      const errorMessage = document.getElementById('errorMessage');
 
-<script>
-    var db;
+      function showErrorMessage(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        setTimeout(() => {
+          errorMessage.style.display = 'none';
+        }, 3000);
+      }
 
-    var request = window.indexedDB.open('tasksDB', 1);
+      function updateList(list, data) {
+        list.innerHTML = '';
+        data.forEach((item, index) => {
+          const listItem = document.createElement('li');
+          listItem.className = list === taskList ? 'task' : 'history-item';
+          listItem.innerHTML = `
+            <span>${item.name} - ${item.price} грн</span>
+            <div class="${list === taskList ? 'task-buttons' : 'history-buttons'}">
+              ${list === taskList ? `<button onclick="completeTask(${index})"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>` : ''}
+              ${list === taskList ? `<button onclick="deleteTask(${index})"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M6 6L6 21"></path><path d="M10 6L10 21"></path><path d="M14 6L14 21"></path><path d="M18 6L18 21"></path></svg></button>` : ''}
+              ${list === historyList ? `<button onclick="deleteHistoryItem(${index})"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M6 6L6 21"></path><path d="M10 6L10 21"></path><path d="M14 6L14 21"></path><path d="M18 6L18 21"></path></svg></button>` : ''}
+            </div>
+          `;
+          list.appendChild(listItem);
+        });
+      }
 
-    request.onerror = function(event) {
-        console.log('Помилка відкриття бази даних:', event.target.errorCode);
-    };
+      function updateTotalPrice() {
+        const total = history.reduce((acc, item) => acc + item.price, 0);
+        totalPriceElement.textContent = `Загальна вартість виконаних робіт: ${total} грн`;
+      }
 
-    request.onsuccess = function(event) {
-        console.log('База даних відкрита успішно');
-        db = event.target.result;
-
-        loadTasks();
-    };
-
-    request.onupgradeneeded = function(event) {
-        console.log('Оновлення бази даних');
-        var db = event.target.result;
-
-        var objectStore = db.createObjectStore('tasks', { keyPath: 'id', autoIncrement: true });
-
-        objectStore.createIndex('text', 'text', { unique: false });
-        objectStore.createIndex('price', 'price', { unique: false });
-    };
-
-    function addTask() {
-        var taskInput = document.getElementById('taskInput');
-        var priceInput = document.getElementById('priceInput');
-
-        if (taskInput.value.trim() !== '') {
-            var transaction = db.transaction(['tasks'], 'readwrite');
-            var objectStore = transaction.objectStore('tasks');
-
-            var request = objectStore.add({ text: taskInput.value, price: parseInt(priceInput.value) });
-
-            request.onsuccess = function(event) {
-                console.log('Робота додана до бази даних');
-                taskInput.value = '';
-                priceInput.value = '';
-
-                loadTasks();
-            };
-
-            request.onerror = function(event) {
-                console.log('Помилка додавання роботи:', event.target.errorCode);
-            };
+      function addTask() {
+        const taskName = taskNameInput.value.trim();
+        const taskPrice = parseFloat(taskPriceInput.value);
+        if (taskName && !isNaN(taskPrice)) {
+          tasks.push({ name: taskName, price: taskPrice });
+          updateList(taskList, tasks);
+          taskNameInput.value = '';
+          taskPriceInput.value = '';
+          saveData();
+        } else {
+          showErrorMessage('Некоректні дані. Будь ласка, спробуйте ще раз.');
         }
-    }
+      }
 
-    function loadTasks() {
-        var taskList = document.getElementById('taskList');
-        taskList.innerHTML = '';
+      window.addTask = addTask;
 
-        var transaction = db.transaction(['tasks'], 'readonly');
-        var objectStore = transaction.objectStore('tasks');
+      function completeTask(index) {
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
 
-        var request = objectStore.openCursor();
+        const completedTask = tasks[index];
+        completedTask.date = `${currentMonth + 1}/${currentYear}`;
+        
+        history.push(completedTask);
+        tasks.splice(index, 1);
+        updateList(taskList, tasks);
+        updateList(historyList, history);
+        updateTotalPrice();
+        saveData();
+      }
 
-        request.onsuccess = function(event) {
-            var cursor = event.target.result;
+      window.completeTask = completeTask;
 
-            if (cursor) {
-                var taskItem = document.createElement('li');
-                taskItem.className = 'taskItem';
+      function deleteTask(index) {
+        tasks.splice(index, 1);
+        updateList(taskList, tasks);
+        saveData();
+      }
 
-                var taskText = document.createElement('span');
-                taskText.textContent = cursor.value.text;
+      window.deleteTask = deleteTask;
 
-                var taskPrice = document.createElement('span');
-                taskPrice.className = 'price';
-                taskPrice.textContent = 'Ціна: ' + cursor.value.price;
+      function deleteHistoryItem(index) {
+        history.splice(index, 1);
+        updateList(historyList, history);
+        updateTotalPrice();
+        saveData();
+      }
 
-                taskItem.appendChild(taskText);
-                taskItem.appendChild(taskPrice);
+      window.deleteHistoryItem = deleteHistoryItem;
 
-                taskList.appendChild(taskItem);
+      function toggleHistory() {
+        historyContainer.style.display = historyContainer.style.display === 'none' ? 'block' : 'none';
+      }
 
-                cursor.continue();
-            }
-        };
-    }
-</script>
+      window.toggleHistory = toggleHistory;
 
+      function saveData() {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        localStorage.setItem('history', JSON.stringify(history));
+      }
+
+      function loadData() {
+        const storedTasks = localStorage.getItem('tasks');
+        const storedHistory = localStorage.getItem('history');
+
+        tasks = storedTasks ? JSON.parse(storedTasks) : [];
+        history = storedHistory ? JSON.parse(storedHistory) : [];
+
+        updateList(taskList, tasks);
+        updateList(historyList, history);
+        updateTotalPrice();
+      }
+
+      let tasks = [];
+      let history = [];
+
+      loadData();
+    });
+  </script>
 </body>
 </html>
