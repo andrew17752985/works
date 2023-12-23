@@ -50,7 +50,6 @@
 <script>
     var db;
 
-    // Відкриття або створення бази даних
     var request = window.indexedDB.open('tasksDB', 1);
 
     request.onerror = function(event) {
@@ -61,7 +60,6 @@
         console.log('База даних відкрита успішно');
         db = event.target.result;
 
-        // Завантаження робіт при завантаженні сторінки
         loadTasks();
     };
 
@@ -69,10 +67,8 @@
         console.log('Оновлення бази даних');
         var db = event.target.result;
 
-        // Створення об'єктного сховища для робіт
         var objectStore = db.createObjectStore('tasks', { keyPath: 'id', autoIncrement: true });
 
-        // Додавання індексів для полів
         objectStore.createIndex('text', 'text', { unique: false });
         objectStore.createIndex('price', 'price', { unique: false });
     };
@@ -85,15 +81,13 @@
             var transaction = db.transaction(['tasks'], 'readwrite');
             var objectStore = transaction.objectStore('tasks');
 
-            // Додавання роботи до бази даних
-            var request = objectStore.add({ text: taskInput.value, price: priceInput.value });
+            var request = objectStore.add({ text: taskInput.value, price: parseInt(priceInput.value) });
 
             request.onsuccess = function(event) {
                 console.log('Робота додана до бази даних');
                 taskInput.value = '';
                 priceInput.value = '';
 
-                // Оновлення відображення робіт
                 loadTasks();
             };
 
@@ -105,21 +99,17 @@
 
     function loadTasks() {
         var taskList = document.getElementById('taskList');
-
-        // Очищення відображення робіт
         taskList.innerHTML = '';
 
         var transaction = db.transaction(['tasks'], 'readonly');
         var objectStore = transaction.objectStore('tasks');
 
-        // Відкриття курсора для прочитання всіх робіт
         var request = objectStore.openCursor();
 
         request.onsuccess = function(event) {
             var cursor = event.target.result;
 
             if (cursor) {
-                // Створення елемента списку для кожної роботи
                 var taskItem = document.createElement('li');
                 taskItem.className = 'taskItem';
 
@@ -135,7 +125,6 @@
 
                 taskList.appendChild(taskItem);
 
-                // Переход до наступного запису в базі даних
                 cursor.continue();
             }
         };
