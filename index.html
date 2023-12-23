@@ -151,53 +151,52 @@
       }
 
       function addTask() {
-        const taskName = taskNameInput.value.trim();
-        const taskPrice = parseFloat(taskPriceInput.value);
-        if (taskName && !isNaN(taskPrice)) {
-          tasks.push({ name: taskName, price: taskPrice });
-          updateList(taskList, tasks);
-          taskNameInput.value = '';
-          taskPriceInput.value = '';
-          saveData();
-        } else {
-          showErrorMessage('Некоректні дані. Будь ласка, спробуйте ще раз.');
-        }
+      const taskName = taskNameInput.value.trim();
+      const taskPrice = parseFloat(taskPriceInput.value);
+      if (taskName && !isNaN(taskPrice)) {
+        tasks.push({ name: taskName, price: taskPrice });
+        updateList(taskList, tasks);
+        taskNameInput.value = '';
+        taskPriceInput.value = '';
+        saveData(); // Збереження даних при додаванні завдань
+      } else {
+        showErrorMessage('Некоректні дані. Будь ласка, спробуйте ще раз.');
       }
+    }
 
       window.addTask = addTask;
 
       function completeTask(index) {
-        const currentDate = new Date();
-        const currentMonth = currentDate.getMonth();
-        const currentYear = currentDate.getFullYear();
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
 
-        const completedTask = tasks[index];
-        completedTask.date = `${currentMonth + 1}/${currentYear}`;
-        
-        history.push(completedTask);
-        tasks.splice(index, 1);
-        updateList(taskList, tasks);
-        updateList(historyList, history);
-        updateTotalPrice();
-        saveData();
-      }
+      const completedTask = tasks[index];
+      completedTask.date = `${currentMonth + 1}/${currentYear}`;
+
+      history.push(completedTask);
+      tasks.splice(index, 1);
+      updateList(taskList, tasks);
+      updateList(historyList, history);
+      updateTotalPrice();
+      saveData(); // Збереження даних при завершенні завдань
+    }
 
       window.completeTask = completeTask;
-
       function deleteTask(index) {
-        tasks.splice(index, 1);
-        updateList(taskList, tasks);
-        saveData();
-      }
+      tasks.splice(index, 1);
+      updateList(taskList, tasks);
+      saveData(); // Збереження даних при видаленні завдань
+    }
 
       window.deleteTask = deleteTask;
 
       function deleteHistoryItem(index) {
-        history.splice(index, 1);
-        updateList(historyList, history);
-        updateTotalPrice();
-        saveData();
-      }
+      history.splice(index, 1);
+      updateList(historyList, history);
+      updateTotalPrice();
+      saveData(); // Збереження даних при видаленні історій
+    }
 
       window.deleteHistoryItem = deleteHistoryItem;
 
